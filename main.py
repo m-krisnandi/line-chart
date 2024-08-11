@@ -1,17 +1,15 @@
-import pandas as pd
 import re
 from bokeh.plotting import figure, show, output_file
 from bokeh.models import HoverTool, ColumnDataSource
+from datetime import datetime
 
 def parse_file(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    data = {
-        "Timestamp": [],
-        "Bitrate": [],
-        "Interval": []
-    }
+    timestamps = []
+    bitrates = []
+    intervals = []
 
     timestamp = None
     for line in lines:
@@ -25,20 +23,17 @@ def parse_file(file_path):
                 interval = interval_match.group(1)
                 bitrate = float(bitrate_match.group(1))
 
-                data["Timestamp"].append(timestamp)
-                data["Bitrate"].append(bitrate)
-                data["Interval"].append(interval)
+                timestamps.append(datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S'))
+                bitrates.append(bitrate)
+                intervals.append(interval)
 
-    return pd.DataFrame(data)
+    return timestamps, bitrates, intervals
 
 file_path = 'soal_chart_bokeh.txt'
-df = parse_file(file_path)
+timestamps, bitrates, intervals = parse_file(file_path)
 
-# Convert Timestamp to datetime
-df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-
-# Create a ColumnDataSource from the DataFrame
-source = ColumnDataSource(df)
+# Create a ColumnDataSource
+source = ColumnDataSource(data=dict(Timestamp=timestamps, Bitrate=bitrates, Interval=intervals))
 
 p = figure(title="Network Speed Over Time", x_axis_label='Time', y_axis_label='Bitrate (Mbits/sec)',
            x_axis_type='datetime')
